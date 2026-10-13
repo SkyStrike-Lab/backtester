@@ -8,3 +8,5 @@ venv/
 tasks/
 tmp/
 config/
+
+sync-agent-branch.sh
