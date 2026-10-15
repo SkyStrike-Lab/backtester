@@ -10,3 +10,4 @@ tmp/
 config/
 
 sync-agent-branch.sh
+sync-branch.sh
