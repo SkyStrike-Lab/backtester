@@ -1,0 +1,1 @@
+- each git commit must bump the version build number.
