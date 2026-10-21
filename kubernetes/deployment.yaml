@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backtester
+  labels:
+    app: backtester
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backtester
+  template:
+    metadata:
+      labels:
+        app: backtester
+    spec:
+      containers:
+        - name: backtester
+          image: registry.home/backtester:placeholder
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5000
+              name: http
+          env:
+            - name: BASE_PATH
+              value: ""
+          volumeMounts:
+            - name: backtester-data
+              mountPath: /app/data
+      volumes:
+        - name: backtester-data
+          persistentVolumeClaim:
+            claimName: backtester-data-pvc
