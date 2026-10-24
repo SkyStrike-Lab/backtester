@@ -41,6 +41,5 @@ spec:
             periodSeconds: 10
       volumes:
         - name: backtester-data
-          hostPath:
-            path: /home/kirito/homelab/services/backtester/data
-            type: DirectoryOrCreate
+          persistentVolumeClaim:
+            claimName: backtester-data-pvc

@@ -4,6 +4,12 @@ namespace: homelab-staging
 resources:
   - ../../base
   - ingress.yaml
+patches:
+  - target:
+      version: v1
+      kind: Deployment
+      name: backtester
+    path: patch-storage.yaml
 images:
   - name: registry.home/backtester:placeholder
     newName: backtester-backtester
