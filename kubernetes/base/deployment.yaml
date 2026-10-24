@@ -21,13 +21,26 @@ spec:
           ports:
             - containerPort: 5000
               name: http
-          env:
-            - name: BASE_PATH
-              value: ""
+          envFrom:
+            - configMapRef:
+                name: backtester-config
           volumeMounts:
             - name: backtester-data
               mountPath: /app/data
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 5000
+            initialDelaySeconds: 5
+            periodSeconds: 10
       volumes:
         - name: backtester-data
-          persistentVolumeClaim:
-            claimName: backtester-data-pvc
+          hostPath:
+            path: /home/kirito/homelab/services/backtester/data
+            type: DirectoryOrCreate
