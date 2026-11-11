@@ -1,35 +1,51 @@
-# Use a lightweight official Python runtime as a parent image
-FROM python:3.11-slim
+# ==========================================
+# Stage 1: Build & Dependency Resolver
+# ==========================================
+FROM python:3.11-slim AS builder
 
-# Set the working directory in the container
-WORKDIR /app
+WORKDIR /build
 
-# Copy the requirements file into the container at /app
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
+    pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# Create non-root user (appuser:1000)
+
+# ==========================================
+# Stage 2: Hardened Minimal Runtime Image
+# ==========================================
+FROM python:3.11-slim AS runtime
+
+# 1. Apply OS security patches (fixes zlib1g) and purge default packaging tools (eliminates pip/setuptools/wheel/jaraco CVEs)
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/* && \
+    python -m pip uninstall -y pip setuptools wheel 2>/dev/null || true && \
+    rm -rf /usr/local/lib/python3.11/ensurepip /usr/local/bin/pip*
+
+# 2. Copy pre-built application dependencies from builder
+COPY --from=builder /install /usr/local
+
+# 3. Create non-root user (appuser:1000)
 RUN groupadd -g 1000 appuser && \
     useradd -u 1000 -g appuser -s /bin/bash -m appuser
 
-# Copy the rest of the application code and configure ownership
+WORKDIR /app
+
+# 4. Copy application source code with non-root ownership
 COPY --chown=appuser:appuser . .
 
-# Ensure data and config directories exist and are writable
+# 5. Ensure data and config directories exist and are writable
 RUN mkdir -p /app/data /app/config && \
     chown -R appuser:appuser /app
 
-# Switch to non-root user
 USER appuser
 
-# Expose port 5000 for the Flask server
 EXPOSE 5000
 
-# Define environment variables
-ENV BASE_PATH=""
+ENV BASE_PATH="" \
+    PYTHONUNBUFFERED=1
 
-# Run app.py when the container launches
 CMD ["python", "src/app.py"]
-
